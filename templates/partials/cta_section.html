@@ -1,0 +1,43 @@
+<section class="relative bg-blue-900 overflow-hidden py-16 px-4 sm:px-6 lg:px-8">
+    <div class="absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2">
+        <div class="w-64 h-64 bg-blue-800 rounded-full opacity-50 mix-blend-multiply filter blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto text-center">
+        
+        <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
+            {% if guide.categorie.slug == 'etudiant' %}
+                Prêt à étudier en <span class="text-yellow-400">{{ guide.destination }}</span> ?
+            {% elif guide.categorie.slug == 'travail' %}
+                Boostez votre carrière à l'international
+            {% else %}
+                Votre voyage commence ici
+            {% endif %}
+        </h2>
+
+        <p class="mt-4 text-xl text-blue-200 max-w-2xl mx-auto">
+            {% if guide %}
+                Ne prenez aucun risque avec votre dossier pour {{ guide.destination }}. Nos experts à Kinshasa vérifient tout pour vous.
+            {% else %}
+                Assistance Voyage RDC vous accompagne de A à Z : Visa, Billet, Logement.
+            {% endif %}
+        </p>
+        
+        <div class="mt-8 flex justify-center gap-4 flex-col sm:flex-row">
+            
+            <a href="https://wa.me/243000000000?text=Bonjour,%20je%20suis%20interessé%20par%20le%20guide%20{{ guide.titre }}" 
+               class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-900 bg-yellow-400 hover:bg-yellow-300 md:py-4 md:text-lg transition transform hover:scale-105 shadow-lg">
+                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.005.572 1.973.97 3.193.969 3.693 0 6.696-3.003 6.696-6.696 0-3.18-2.585-5.766-5.766-5.766zm-9.155 17.828l3.968-1.037c1.65.903 3.522 1.38 5.432 1.381 6.289 0 11.406-5.117 11.406-11.406s-5.117-11.406-11.406-11.406c-6.289 0-11.406 5.117-11.406 11.406 0 2.016.529 3.962 1.528 5.674l-1.077 3.942.502 1.446z"/>
+                </svg>
+                Discuter avec un conseiller
+            </a>
+
+            <a href="/contact/" 
+               class="inline-flex items-center justify-center px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-white bg-transparent hover:bg-blue-800 md:py-4 md:text-lg transition">
+                Prendre rendez-vous
+            </a>
+        </div>
+        
+        <p class="mt-4 text-sm text-blue-300">Réponse garantie en moins de 24h.</p>
+    </div>
+</section>

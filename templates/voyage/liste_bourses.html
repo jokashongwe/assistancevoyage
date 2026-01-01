@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Bourses d'études disponibles - Assistance Voyage RDC{% endblock %}
+
+{% block content %}
+
+<div class="bg-gray-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-blue-900">Bourses d'études</h1>
+            <p class="mt-4 text-xl text-gray-600">
+                Opportunités de financement pour étudiants congolais. <br>
+                <span class="text-red-500 font-bold">Attention aux dates limites !</span>
+            </p>
+        </div>
+
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {% for bourse in bourses %}
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full border border-gray-100">
+                
+                <div class="relative h-48">
+                    <img src="{{ bourse.image.url }}" alt="{{ bourse.titre }}" class="w-full h-full object-cover">
+                    <div class="absolute top-4 left-4 bg-blue-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
+                        {{ bourse.pays }}
+                    </div>
+                    
+                    <div class="absolute bottom-0 right-0 bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1 rounded-tl-lg">
+                        {{ bourse.get_couverture_display }}
+                    </div>
+                </div>
+
+                <div class="p-6 flex-1 flex flex-col">
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">
+                            <a href="{% url 'detail_bourse' bourse.slug %}" class="hover:text-blue-600 transition">
+                                {{ bourse.titre }}
+                            </a>
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-4">{{ bourse.niveau }}</p>
+                        
+                        <div class="flex items-center mb-4">
+                            {% if bourse.jours_restants < 10 %}
+                                <span class="flex items-center text-red-600 font-bold text-sm animate-pulse">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Expire dans {{ bourse.jours_restants }} jours !
+                                </span>
+                            {% else %}
+                                <span class="flex items-center text-green-600 font-medium text-sm">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    Date limite : {{ bourse.date_limite|date:"d M Y" }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <a href="{% url 'detail_bourse' bourse.slug %}" class="mt-4 w-full block text-center bg-blue-50 text-blue-700 font-semibold py-2 rounded-lg hover:bg-blue-100 transition">
+                        Voir les conditions
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+                <div class="col-span-3 text-center py-12">
+                    <p class="text-gray-500 text-lg">Aucune bourse disponible pour le moment. Revenez bientôt !</p>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

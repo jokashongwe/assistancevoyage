@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+        <span class="bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide mb-4 inline-block">
+            {{ bourse.pays }}
+        </span>
+        <h1 class="text-3xl md:text-5xl font-extrabold mb-4">{{ bourse.titre }}</h1>
+        <p class="text-blue-200 text-lg">Niveau : {{ bourse.niveau }} | Financement : {{ bourse.get_couverture_display }}</p>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 py-12">
+    
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8 flex items-start">
+        <svg class="w-6 h-6 text-red-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div>
+            <h3 class="text-red-800 font-bold">Date limite de candidature</h3>
+            <p class="text-red-700">
+                Les dossiers doivent être soumis avant le <strong>{{ bourse.date_limite|date:"d F Y" }}</strong>.
+                Il vous reste <strong>{{ bourse.jours_restants }} jours</strong>.
+            </p>
+        </div>
+    </div>
+
+    <article class="prose prose-lg prose-blue max-w-none bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+        {{ bourse.contenu|safe }}
+    </article>
+
+    <div class="mt-12 bg-blue-900 rounded-2xl p-8 text-center text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-yellow-400 rounded-full opacity-20"></div>
+        
+        <h2 class="text-2xl font-bold mb-4 relative z-10">Vous voulez postuler à cette bourse ?</h2>
+        <p class="text-blue-100 mb-8 max-w-2xl mx-auto relative z-10">
+            La compétition est rude. Une simple erreur dans le dossier (CV mal formaté, lettre de motivation faible) peut vous éliminer.
+            Nos experts vous accompagnent pour monter un dossier gagnant.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+            <a href="https://wa.me/243000000000?text=Bonjour,%20je%20veux%20de%20l'aide%20pour%20la%20bourse:%20{{ bourse.titre }}" 
+               class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-md text-blue-900 bg-yellow-400 hover:bg-yellow-300 transition">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M...whatsapp..."/></svg>
+                Coaching Dossier Bourse
+            </a>
+            
+            <a href="{% url 'contact' %}" class="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-bold rounded-md text-white hover:bg-white hover:text-blue-900 transition">
+                Poser une question
+            </a>
+        </div>
+        <p class="mt-4 text-xs text-blue-300">Note : Nous ne délivrons pas la bourse, nous vous aidons à postuler.</p>
+    </div>
+
+</div>
+{% endblock %}

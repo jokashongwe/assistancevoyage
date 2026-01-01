@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    
+    <div class="max-w-md w-full bg-white shadow-2xl rounded-2xl overflow-hidden">
+        <div class="{% if couleur == 'green' %}bg-green-500{% elif couleur == 'yellow' %}bg-yellow-500{% else %}bg-red-500{% endif %} py-6 text-center">
+            <svg class="h-16 w-16 text-white mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {% if couleur == 'green' %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                {% elif couleur == 'yellow' %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                {% else %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                {% endif %}
+            </svg>
+            <h2 class="text-2xl font-bold text-white uppercase tracking-wide">{{ titre }}</h2>
+        </div>
+
+        <div class="p-8">
+            <p class="text-gray-600 text-lg mb-6 text-center leading-relaxed">
+                {{ msg }}
+            </p>
+
+            <div class="bg-blue-50 border-l-4 border-blue-900 p-4 mb-8">
+                <p class="text-sm text-blue-800">
+                    <strong>Conseil d'expert :</strong> Un bon dossier se prépare 3 à 6 mois à l'avance. Ne tardez pas.
+                </p>
+            </div>
+
+            {% if guide_suggere %}
+            <div class="mt-8 mb-8 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition duration-300">
+                <div class="md:flex">
+                    <div class="md:flex-shrink-0">
+                        {% if guide_suggere.image_couverture %}
+                            <img class="h-48 w-full object-cover md:w-48" src="{{ guide_suggere.image_couverture.url }}" alt="{{ guide_suggere.titre }}">
+                        {% else %}
+                            <div class="h-48 w-full md:w-48 bg-blue-900 flex items-center justify-center text-white font-bold text-2xl">
+                                {{ guide_suggere.destination|slice:":2" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="p-6 flex flex-col justify-center">
+                        <div class="uppercase tracking-wide text-sm text-yellow-500 font-semibold">Recommandé pour vous</div>
+                        <a href="{{ guide_suggere.get_absolute_url }}" class="block mt-1 text-lg leading-tight font-bold text-blue-900 hover:underline">
+                            {{ guide_suggere.titre }}
+                        </a>
+                        <p class="mt-2 text-gray-500">
+                            Découvrez la procédure détaillée, les documents exacts et les pièges à éviter pour {{ guide_suggere.destination }}.
+                        </p>
+                        <div class="mt-4">
+                            <a href="{{ guide_suggere.get_absolute_url }}" class="inline-flex items-center text-blue-600 font-bold hover:text-blue-800">
+                                Lire le guide complet &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <a href="https://wa.me/243000000000?text=Bonjour,%20j'ai%20fait%20la%20simulation%20sur%20le%20site.%20Mon%20résultat%20est:%20{{ titre }}.%20Je%20veux%20en%20savoir%20plus." 
+               class="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-white bg-green-600 hover:bg-green-700 md:text-xl transition shadow-lg transform hover:scale-105">
+                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M... (Icone WhatsApp) ..."/></svg>
+                Discuter avec un expert maintenant
+            </a>
+            
+            <a href="{% url 'accueil' %}" class="block mt-4 text-center text-gray-500 hover:text-gray-700 text-sm">
+                Retour à l'accueil
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
