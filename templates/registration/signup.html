@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un compte - Assistance Voyage RDC{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-blue-900">
+            Créer votre compte sécurisé
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            Pour suivre l'avancement de votre dossier Visa.
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            
+            <form method="POST" class="space-y-2">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="text-xs text-gray-500 mb-2">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        S'inscrire
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">Déjà un compte ?</span>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <a href="{% url 'login' %}" class="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Se connecter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

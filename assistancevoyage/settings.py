@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ckeditor',
-    'voyage', # Supposons que votre app s'appelle 'voyage'
+    'voyage',
+    'procedure',
 ]
 
 MIDDLEWARE = [
@@ -121,7 +122,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
+
 MEDIA_ROOT = BASE_DIR / 'media'
+STATIC_ROOT = BASE_DIR / 'static'
 
 CKEDITOR_CONFIGS = {
     'default': {
@@ -141,3 +144,12 @@ DEFAULT_FROM_EMAIL = 'admin@assistance-voyage.cd'
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'votre-email@gmail.com'
 # EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-d-application'
+
+# Redirection après une connexion réussie
+LOGIN_REDIRECT_URL = 'tableau_bord'
+
+# Redirection après la déconnexion
+LOGOUT_REDIRECT_URL = 'login' 
+
+# URL de la page de login (si un utilisateur non connecté tente d'accéder au dashboard)
+LOGIN_URL = 'login'
