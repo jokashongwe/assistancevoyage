@@ -1,10 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from voyage.models import Categorie
-# Assurez-vous d'importer votre modèle Categorie existant
+from ckeditor.fields import RichTextField
 
-# 1. Définir quels documents sont nécessaires pour quelle catégorie
-# Ex: Pour "Étudiant", il faut "Passeport", "Diplôme", "Relevés de notes"
+
 class TypeDocument(models.Model):
     nom = models.CharField(max_length=100) # Ex: Passeport
     categorie = models.ForeignKey(Categorie, on_delete=models.CASCADE, related_name='documents_requis')
@@ -13,6 +12,17 @@ class TypeDocument(models.Model):
 
     def __str__(self):
         return f"{self.nom} ({self.categorie.nom})"
+
+
+class Offre(models.Model):
+    nom = models.CharField(max_length=50) # Ex: Starter, Premium
+    prix = models.DecimalField(max_digits=10, decimal_places=2, help_text="Prix en USD")
+    credits_inclus = models.PositiveIntegerField(help_text="Nombre de vérifications incluses")
+    description = RichTextField(help_text="Liste des avantages (HTML)")
+    est_populaire = models.BooleanField(default=False, help_text="Mettre en avant ?")
+    
+    def __str__(self):
+        return f"{self.nom} ({self.prix}$)"
 
 # 2. Le Dossier du client
 class Dossier(models.Model):
@@ -38,12 +48,27 @@ class Dossier(models.Model):
     # Infos Complémentaires (Step 2)
     a_deja_voyage = models.BooleanField(default=False, verbose_name="Avez-vous déjà voyagé ?")
     motif_detaille = models.TextField(blank=True, null=True, help_text="Décrivez votre projet en quelques lignes")
+
+    offre = models.ForeignKey(Offre, on_delete=models.SET_NULL, null=True, blank=True)
+    est_paye = models.BooleanField(default=False)
+    credits_restants = models.PositiveIntegerField(default=0)
+
+    date_paiement = models.DateTimeField(null=True, blank=True)
+    reference_paiement = models.CharField(max_length=100, blank=True, null=True)
     
     # Pour stocker le résultat de l'analyse automatique
     pourcentage_completion = models.IntegerField(default=0)
 
     def __str__(self):
         return f"Dossier {self.categorie} - {self.client.username}"
+
+    def utiliser_credit(self):
+        """Déduit un crédit si disponible"""
+        if self.credits_restants > 0:
+            self.credits_restants -= 1
+            self.save()
+            return True
+        return False
 
     # L'INTELLIGENCE DU SYSTÈME : Calculer ce qui manque
     def analyser_dossier(self):
@@ -87,3 +112,4 @@ class FichierClient(models.Model):
 
     def __str__(self):
         return f"{self.type_document.nom} - {self.dossier.client.username}"
+

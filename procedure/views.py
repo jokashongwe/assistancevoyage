@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, get_object_or_404
-from .models import Dossier, FichierClient, TypeDocument, Categorie
+from .models import Dossier, FichierClient, TypeDocument, Categorie, Offre
 from django.contrib.auth import login
 from .forms import SignUpForm, DossierEtape1Form, DossierEtape2Form
 from django.contrib import messages
+from django.utils import timezone
 
 @login_required
 def tableau_bord(request):
@@ -14,6 +15,39 @@ def tableau_bord(request):
     categories = Categorie.objects.filter()
     
     return render(request, 'procedure/dashboard.html', {'dossiers': dossiers, 'categories': categories})
+
+@login_required
+def choix_offre(request, dossier_id):
+    dossier = get_object_or_404(Dossier, id=dossier_id, client=request.user)
+    
+    # Si déjà payé, on redirige vers le dashboard
+    if dossier.est_paye:
+        return redirect('detail_dossier', dossier_id=dossier.id)
+        
+    offres = Offre.objects.all().order_by('prix')
+    
+    return render(request, 'procedure/pricing.html', {
+        'dossier': dossier,
+        'offres': offres
+    })
+
+@login_required
+def valider_paiement(request, dossier_id, offre_id):
+    # Simulation de paiement (Mobile Money / Carte)
+    dossier = get_object_or_404(Dossier, id=dossier_id, client=request.user)
+    offre = get_object_or_404(Offre, id=offre_id)
+    
+    # Mise à jour du dossier
+    dossier.offre = offre
+    dossier.est_paye = True
+    dossier.credits_restants = offre.credits_inclus
+    dossier.date_paiement = timezone.now()
+    dossier.reference_paiement = f"PAY-{timezone.now().strftime('%Y%m%d')}-{dossier.id}" # Fausse ref
+    dossier.statut = 'analyse' # On passe en mode analyse direct
+    dossier.save()
+    
+    messages.success(request, f"Paiement confirmé ! Vous avez {dossier.credits_restants} crédits de vérification.")
+    return redirect('detail_dossier', dossier_id=dossier.id)
 
 @login_required
 def detail_dossier(request, dossier_id):
@@ -160,7 +194,8 @@ def wizard_dossier(request, categorie_id, dossier_id=None):
             if fichiers_recus > 0:
                 dossier.analyser_dossier() # Met à jour le %
                 messages.success(request, f"Bravo ! {fichiers_recus} documents ont été ajoutés.")
-                return redirect('detail_dossier', dossier_id=dossier.id)
+                #return redirect('detail_dossier', dossier_id=dossier.id)
+                return redirect('choix_offre', dossier_id=dossier.id)
             else:
                 messages.warning(request, "Veuillez télécharger au moins un document pour continuer.")
 
