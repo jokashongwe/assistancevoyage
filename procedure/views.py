@@ -16,12 +16,6 @@ def tableau_bord(request):
     return render(request, 'procedure/dashboard.html', {'dossiers': dossiers, 'categories': categories})
 
 @login_required
-def creer_dossier(request, categorie_id):
-    cat = get_object_or_404(Categorie, id=categorie_id)
-    dossier, created = Dossier.objects.get_or_create(client=request.user, categorie=cat)
-    return redirect('detail_dossier', dossier_id=dossier.id)
-
-@login_required
 def detail_dossier(request, dossier_id):
     dossier = get_object_or_404(Dossier, id=dossier_id, client=request.user)
     
@@ -65,6 +59,12 @@ def detail_dossier(request, dossier_id):
         'liste_controle': liste_controle
     })
 
+@login_required
+def creer_dossier(request, categorie_id):
+    cat = get_object_or_404(Categorie, id=categorie_id)
+    dossier, created = Dossier.objects.get_or_create(client=request.user, categorie=cat)
+    return redirect('detail_dossier', dossier_id=dossier.id)
+
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -77,15 +77,15 @@ def signup(request):
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
 
+
 @login_required
 def wizard_dossier(request, categorie_id, dossier_id=None):
-    # 1. Récupération ou Création du brouillon
     categorie = get_object_or_404(Categorie, id=categorie_id)
     
+    # Récupération ou Création
     if dossier_id:
         dossier = get_object_or_404(Dossier, id=dossier_id, client=request.user)
     else:
-        # Création initiale
         dossier = Dossier.objects.create(
             client=request.user, 
             categorie=categorie,
@@ -94,25 +94,20 @@ def wizard_dossier(request, categorie_id, dossier_id=None):
         )
         return redirect('wizard_dossier_step', categorie_id=categorie.id, dossier_id=dossier.id)
 
-    # Déterminer l'étape courante (soit via l'URL si on gérait des URLs distinctes, soit via le modèle)
-    # Ici on utilise une logique simple basée sur POST
-    
     step = dossier.etape_creation
     form = None
+    # Pour l'étape 3, on n'utilise pas un "Form" Django classique mais une liste d'objets
+    documents_attendus = [] 
 
+    # --- LOGIQUE POST (Traitement) ---
     if request.method == 'POST':
-        # --- TRAITEMENT DES DONNÉES ---
+        
+        # Bouton "Sauvegarder et quitter"
         if 'sauvegarder_quitter' in request.POST:
-             # L'utilisateur veut juste sauver l'état actuel et partir
-             if step == 1: form = DossierEtape1Form(request.POST, instance=dossier)
-             elif step == 2: form = DossierEtape2Form(request.POST, instance=dossier)
-             
-             if form.is_valid():
-                 form.save()
-                 messages.success(request, "Progression sauvegardée.")
-                 return redirect('tableau_bord')
+             # (Votre code existant pour sauver et redirect dashboard...)
+             return redirect('tableau_bord')
 
-        # Navigation "Suivant"
+        # --- ÉTAPE 1 -> 2 ---
         if step == 1:
             form = DossierEtape1Form(request.POST, instance=dossier)
             if form.is_valid():
@@ -121,31 +116,68 @@ def wizard_dossier(request, categorie_id, dossier_id=None):
                 dossier.save()
                 return redirect('wizard_dossier_step', categorie_id=categorie.id, dossier_id=dossier.id)
         
+        # --- ÉTAPE 2 -> 3 (Génération des requis) ---
         elif step == 2:
             form = DossierEtape2Form(request.POST, instance=dossier)
             if form.is_valid():
                 form.save()
-                # Fin du wizard, on passe à l'analyse ou au tableau de bord
-                dossier.etape_creation = 3 # Marqueur de fin
+                
+                # C'EST ICI QUE LA MAGIE OPÈRE :
+                # 1. On récupère les types de documents obligatoires pour cette catégorie
+                types_requis = categorie.documents_requis.all()
+                
+                # 2. On pré-crée les lignes FichierClient si elles n'existent pas encore
+                for type_doc in types_requis:
+                    FichierClient.objects.get_or_create(
+                        dossier=dossier,
+                        type_document=type_doc
+                    )
+                
+                dossier.etape_creation = 3 # On passe à l'étape upload
                 dossier.save()
-                # On lance une première analyse pour générer la liste des docs
-                dossier.analyser_dossier() 
-                messages.success(request, "Dossier initialisé avec succès ! Ajoutez maintenant vos documents.")
-                return redirect('detail_dossier', dossier_id=dossier.id)
+                return redirect('wizard_dossier_step', categorie_id=categorie.id, dossier_id=dossier.id)
 
+        # --- ÉTAPE 3 (Upload Final) ---
+        elif step == 3:
+            # Ici, pas de "form.is_valid()". On traite les fichiers manuellement.
+            
+            # On récupère tous les fichiers attendus pour ce dossier
+            fichiers_attendus = FichierClient.objects.filter(dossier=dossier)
+            
+            fichiers_recus = 0
+            
+            for attente in fichiers_attendus:
+                # Dans le HTML, le champ input aura le name="doc_ID" (ex: doc_12)
+                input_name = f"doc_{attente.id}"
+                
+                if request.FILES.get(input_name):
+                    attente.fichier = request.FILES[input_name]
+                    attente.etat = 'attente' # On met en statut "à vérifier"
+                    attente.save()
+                    fichiers_recus += 1
+            
+            # On vérifie si au moins un fichier a été envoyé (ou tous, selon votre sévérité)
+            if fichiers_recus > 0:
+                dossier.analyser_dossier() # Met à jour le %
+                messages.success(request, f"Bravo ! {fichiers_recus} documents ont été ajoutés.")
+                return redirect('detail_dossier', dossier_id=dossier.id)
+            else:
+                messages.warning(request, "Veuillez télécharger au moins un document pour continuer.")
+
+    # --- LOGIQUE GET (Affichage) ---
     else:
-        # --- AFFICHAGE DU FORMULAIRE (GET) ---
         if step == 1:
             form = DossierEtape1Form(instance=dossier)
         elif step == 2:
             form = DossierEtape2Form(instance=dossier)
-        else:
-            # Si le wizard est fini (étape 3), on redirige vers le détail
-            return redirect('detail_dossier', dossier_id=dossier.id)
+        elif step == 3:
+            # Pour l'étape 3, on récupère la liste des FichierClient créés à la fin de l'étape 2
+            documents_attendus = FichierClient.objects.filter(dossier=dossier)
 
     return render(request, 'procedure/wizard_form.html', {
         'form': form,
         'dossier': dossier,
         'step': step,
-        'total_steps': 2
+        'total_steps': 3, # On passe à 3 étapes
+        'documents_attendus': documents_attendus # On envoie la liste au template
     })

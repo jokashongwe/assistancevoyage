@@ -64,7 +64,7 @@
                             <p class="text-sm text-gray-500 mb-6">
                                 {% if dossier.etape_creation < 3 %}
                                     <span class="text-yellow-600 font-bold">Inscription non terminée.</span> <br>
-                                    Vous êtes à l'étape {{ dossier.etape_creation }}/2.
+                                    Vous êtes à l'étape {{ dossier.etape_creation }}/3.
                                 {% else %}
                                     {% if dossier.statut == 'brouillon' %}
                                         Il manque des documents.
@@ -79,7 +79,7 @@
                                     Reprendre l'inscription &rarr;
                                 </a>
                             {% else %}
-                                <a href="{% url 'detail_dossier' dossier.id %}" class="block w-full text-center bg-blue-900 text-white font-bold py-2 px-4 rounded hover:bg-blue-800 transition">
+                                <a href="{% url 'wizard_dossier_step' dossier.categorie.id dossier.id %}" class="block w-full text-center bg-blue-900 text-white font-bold py-2 px-4 rounded hover:bg-blue-800 transition">
                                     Gérer mes documents
                                 </a>
                             {% endif %}
