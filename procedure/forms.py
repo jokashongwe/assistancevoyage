@@ -2,7 +2,7 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django import forms
-from .models import Dossier
+from .models import Dossier, Universite
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(max_length=254, help_text='Requis pour recevoir les notifications de votre dossier.')
@@ -35,10 +35,23 @@ class TailwindForm(forms.ModelForm):
 class DossierEtape1Form(TailwindForm):
     class Meta:
         model = Dossier
-        fields = ['ville_depart', 'ville_destination', 'date_prevue_voyage']
+        fields = ['ville_depart', 'pays_destination', 'date_prevue_voyage']
         widgets = {
             'date_prevue_voyage': forms.DateInput(attrs={'type': 'date'}),
         }
+
+class DossierEtape3Form(TailwindForm):
+    class Meta:
+        model = Dossier
+        fields = ['universite_choisie']
+
+    def __init__(self, *args, **kwargs):
+        # On récupère le pays choisi à l'étape 1 pour filtrer la liste
+        pays = kwargs.pop('pays_filter', None)
+        super().__init__(*args, **kwargs)
+        if pays:
+            self.fields['universite_choisie'].queryset = Universite.objects.filter(pays=pays)
+            self.fields['universite_choisie'].empty_label = "Sélectionnez votre université cible..."
 
 class DossierEtape2Form(TailwindForm):
     class Meta:

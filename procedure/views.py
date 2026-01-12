@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, get_object_or_404
 from .models import Dossier, FichierClient, TypeDocument, Categorie, Offre
 from django.contrib.auth import login
-from .forms import SignUpForm, DossierEtape1Form, DossierEtape2Form
+from .forms import SignUpForm, DossierEtape1Form, DossierEtape2Form, DossierEtape3Form
 from django.contrib import messages
 from django.utils import timezone
 
@@ -151,68 +151,53 @@ def wizard_dossier(request, categorie_id, dossier_id=None):
                 return redirect('wizard_dossier_step', categorie_id=categorie.id, dossier_id=dossier.id)
         
         # --- ÉTAPE 2 -> 3 (Génération des requis) ---
-        elif step == 2:
+        if step == 2 and request.method == 'POST':
             form = DossierEtape2Form(request.POST, instance=dossier)
             if form.is_valid():
                 form.save()
-                
-                # C'EST ICI QUE LA MAGIE OPÈRE :
-                # 1. On récupère les types de documents obligatoires pour cette catégorie
-                types_requis = categorie.documents_requis.all()
-                
-                # 2. On pré-crée les lignes FichierClient si elles n'existent pas encore
-                for type_doc in types_requis:
-                    FichierClient.objects.get_or_create(
-                        dossier=dossier,
-                        type_document=type_doc
-                    )
-                
-                dossier.etape_creation = 3 # On passe à l'étape upload
+                dossier.etape_creation = 3 # On va vers le choix université
                 dossier.save()
                 return redirect('wizard_dossier_step', categorie_id=categorie.id, dossier_id=dossier.id)
 
-        # --- ÉTAPE 3 (Upload Final) ---
-        elif step == 3:
-            # Ici, pas de "form.is_valid()". On traite les fichiers manuellement.
-            
-            # On récupère tous les fichiers attendus pour ce dossier
-            fichiers_attendus = FichierClient.objects.filter(dossier=dossier)
-            
-            fichiers_recus = 0
-            
-            for attente in fichiers_attendus:
-                # Dans le HTML, le champ input aura le name="doc_ID" (ex: doc_12)
-                input_name = f"doc_{attente.id}"
+        # --- ÉTAPE 3 (Université) -> ÉTAPE 4 (Génération Documents & Recap) ---
+        elif step == 3 and request.method == 'POST':
+            # On passe le pays pour filtrer le formulaire
+            form = DossierEtape3Form(request.POST, instance=dossier, pays_filter=dossier.pays_destination)
+            if form.is_valid():
+                form.save()
                 
-                if request.FILES.get(input_name):
-                    attente.fichier = request.FILES[input_name]
-                    attente.etat = 'attente' # On met en statut "à vérifier"
-                    attente.save()
-                    fichiers_recus += 1
-            
-            # On vérifie si au moins un fichier a été envoyé (ou tous, selon votre sévérité)
-            if fichiers_recus > 0:
-                dossier.analyser_dossier() # Met à jour le %
-                messages.success(request, f"Bravo ! {fichiers_recus} documents ont été ajoutés.")
-                #return redirect('detail_dossier', dossier_id=dossier.id)
-                return redirect('choix_offre', dossier_id=dossier.id)
-            else:
-                messages.warning(request, "Veuillez télécharger au moins un document pour continuer.")
-
-    # --- LOGIQUE GET (Affichage) ---
+                # --- FUSION DES LISTES DE DOCUMENTS ---
+                # 1. Documents pour le VISA (liés à la Catégorie "Étudiant")
+                docs_visa = categorie.documents_requis.all()
+                
+                # 2. Documents pour l'ADMISSION (liés à l'Université choisie)
+                docs_uni = dossier.universite_choisie.documents_admission.all()
+                
+                # 3. On crée les fiches vides pour TOUS ces documents
+                # L'union (|) permet d'éviter les doublons si un document est demandé par les deux
+                tous_docs = docs_visa | docs_uni 
+                
+                for type_doc in tous_docs.distinct():
+                    FichierClient.objects.get_or_create(dossier=dossier, type_document=type_doc)
+                
+                dossier.etape_creation = 4 # Étape finale (Recap + Upload)
+                dossier.save()
+                return redirect('wizard_dossier_step', categorie_id=categorie.id, dossier_id=dossier.id)
+        # --- LOGIQUE GET (Affichage) ---
     else:
-        if step == 1:
-            form = DossierEtape1Form(instance=dossier)
-        elif step == 2:
-            form = DossierEtape2Form(instance=dossier)
-        elif step == 3:
-            # Pour l'étape 3, on récupère la liste des FichierClient créés à la fin de l'étape 2
-            documents_attendus = FichierClient.objects.filter(dossier=dossier)
+        if step == 1: form = DossierEtape1Form(instance=dossier)
+        elif step == 2: form = DossierEtape2Form(instance=dossier)
+        elif step == 3: 
+            # On passe le pays pour que la liste déroulante ne montre que les universités du pays choisi
+            form = DossierEtape3Form(instance=dossier, pays_filter=dossier.pays_destination)
+        elif step == 4:
+            # Pour la dernière étape, on n'a pas de form, on affiche le RECAP
+            pass
 
     return render(request, 'procedure/wizard_form.html', {
         'form': form,
         'dossier': dossier,
         'step': step,
-        'total_steps': 3, # On passe à 3 étapes
+        'total_steps': 4, # On passe à 3 étapes
         'documents_attendus': documents_attendus # On envoie la liste au template
     })

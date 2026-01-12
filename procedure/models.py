@@ -3,6 +3,30 @@ from django.contrib.auth.models import User
 from voyage.models import Categorie
 from ckeditor.fields import RichTextField
 
+PAYS_CHOICES = [
+    ('canada', 'Canada'),
+    ('france', 'France'),
+    ('belgique', 'Belgique'),
+    ('usa', 'Etats Unis'),
+    ('finlande', 'Finlande'),
+    ('allemagne', 'Allemagne'),
+    ('swede', 'Swède'),
+    ('australie', 'Australie'),
+]
+
+class Universite(models.Model):
+    nom = models.CharField(max_length=200) # Ex: Université Laval
+    pays = models.CharField(max_length=50, choices=PAYS_CHOICES)
+    site_web = models.URLField(blank=True)
+    logo = models.ImageField(upload_to='universites/', blank=True, null=True)
+    
+    # RELATIONS MAGIQUES :
+    # Quels documents cette université demande-t-elle spécifiquement ?
+    # Ex: "Relevé de notes", "Lettre de recommandation prof", "Portfolio"
+    documents_admission = models.ManyToManyField('TypeDocument', related_name='universites_requerantes', blank=True)
+
+    def __str__(self):
+        return f"{self.nom} ({self.pays})"
 
 class TypeDocument(models.Model):
     nom = models.CharField(max_length=100) # Ex: Passeport
@@ -32,6 +56,9 @@ class Dossier(models.Model):
         ('valide', 'Validé - Prêt pour dépôt'),
         ('refuse', 'À corriger'),
     ]
+
+    pays_destination = models.CharField(max_length=50, choices=PAYS_CHOICES, null=True) # Important pour filtrer
+    universite_choisie = models.ForeignKey(Universite, on_delete=models.SET_NULL, null=True, blank=True, related_name='dossiers')
     
     client = models.ForeignKey(User, on_delete=models.CASCADE)
     categorie = models.ForeignKey(Categorie, on_delete=models.SET_NULL, null=True) # Ex: Visa Étudiant

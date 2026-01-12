@@ -30,6 +30,7 @@ urlpatterns = [
     path('nouveau-dossier/<int:categorie_id>/', views.wizard_dossier, name='creer_dossier'),
     path('dossier/<int:dossier_id>/', views.detail_dossier, name='detail_dossier'),
     path('nouveau-dossier/<int:categorie_id>/<int:dossier_id>/', views.wizard_dossier, name='wizard_dossier_step'),
+    path('procedures/', include('procedure.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
