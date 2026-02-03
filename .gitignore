@@ -3,5 +3,4 @@
 */__pycache__/
 *.sqlite3
 media/
-*/migrations
 .env
